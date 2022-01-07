@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+message ObjectId {
+  string value = 1;
+}
+
+message Todo {
+  string id = 1;
+  ObjectId oid = 2;
+  repeated ObjectId repeated_oid = 3;
+  optional ObjectId optional_oid = 4;
+  map<string, ObjectId> map_of_oids = 5;
+}

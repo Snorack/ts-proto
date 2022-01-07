@@ -32,6 +32,7 @@
   - [Wrapper Types](#wrapper-types)
   - [JSON Types (Struct Types)](#json-types-struct-types)
   - [Timestamp](#timestamp)
+  - [ObjectId](#objectid)
 - [Number Types](#number-types)
 - [Current Status of Optional Values](#current-status-of-optional-values)
 
