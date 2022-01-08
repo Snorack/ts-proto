@@ -19,9 +19,6 @@ const generate_generic_service_definition_1 = require("./generate-generic-servic
 function generateFile(ctx, fileDesc) {
     var _a;
     const { options, utils } = ctx;
-    if (options.useObjectId) {
-        ts_poet_1.imp('mongodb*mongodb');
-    }
     if (options.useOptionals === false) {
         console.warn("ts-proto: Passing useOptionals as a boolean option is deprecated and will be removed in a future version. Please pass the string 'none' instead of false.");
         options.useOptionals = 'none';
@@ -331,8 +328,8 @@ function makeDeepPartial(options, longs) {
 }
 function makeObjectIdMethods(options) {
     const mongodb = ts_poet_1.imp('mongodb*mongodb');
-    const fromObjectId = ts_poet_1.conditionalOutput('fromObjectId', ts_poet_1.code `
-      function fromObjectId(oid: ObjectId): ${mongodb}.ObjectId {
+    const fromProtoObjectId = ts_poet_1.conditionalOutput('fromProtoObjectId', ts_poet_1.code `
+      function fromProtoObjectId(oid: ObjectId): ${mongodb}.ObjectId {
         return new ${mongodb}.ObjectId(oid.value);
       }
     `);
@@ -343,17 +340,17 @@ function makeObjectIdMethods(options) {
         } else if (typeof o === "string") {
           return new ${mongodb}.ObjectId(o);
         } else {
-          return ${fromObjectId}(ObjectId.fromJSON(o));
+          return ${fromProtoObjectId}(ObjectId.fromJSON(o));
         }
       }
     `);
-    const toObjectId = ts_poet_1.conditionalOutput('toObjectId', ts_poet_1.code `
-      function toObjectId(oid: ${mongodb}.ObjectId): ObjectId {
+    const toProtoObjectId = ts_poet_1.conditionalOutput('toProtoObjectId', ts_poet_1.code `
+      function toProtoObjectId(oid: ${mongodb}.ObjectId): ObjectId {
         const value = oid.toString();
         return { value };
       }
     `);
-    return { fromJsonObjectId, fromObjectId, toObjectId };
+    return { fromJsonObjectId, fromProtoObjectId, toProtoObjectId };
 }
 function makeTimestampMethods(options, longs) {
     const Timestamp = utils_1.impProto(options, 'google/protobuf/timestamp', 'Timestamp');
@@ -605,9 +602,9 @@ function generateDecode(ctx, fullName, messageDesc) {
             const type = types_1.basicTypeName(ctx, field, { keepValueType: true });
             readSnippet = ts_poet_1.code `${utils.fromTimestamp}(${type}.decode(reader, reader.uint32()))`;
         }
-        else if (types_1.isObjectId(field) && options.useObjectId) {
+        else if (types_1.isObjectId(field) && options.useMongoObjectId) {
             const type = types_1.basicTypeName(ctx, field, { keepValueType: true });
-            readSnippet = ts_poet_1.code `${utils.fromObjectId}(${type}.decode(reader, reader.uint32()))`;
+            readSnippet = ts_poet_1.code `${utils.fromProtoObjectId}(${type}.decode(reader, reader.uint32()))`;
         }
         else if (types_1.isMessage(field)) {
             const type = types_1.basicTypeName(ctx, field);
@@ -693,10 +690,10 @@ function generateEncode(ctx, fullName, messageDesc) {
             const tag = ((field.number << 3) | types_1.basicWireType(field.type)) >>> 0;
             writeSnippet = (place) => ts_poet_1.code `writer.uint32(${tag}).${types_1.toReaderCall(field)}(${place})`;
         }
-        else if (types_1.isObjectId(field) && options.useObjectId) {
+        else if (types_1.isObjectId(field) && options.useMongoObjectId) {
             const tag = ((field.number << 3) | 2) >>> 0;
             const type = types_1.basicTypeName(ctx, field, { keepValueType: true });
-            writeSnippet = (place) => ts_poet_1.code `${type}.encode(${utils.toObjectId}(${place}), writer.uint32(${tag}).fork()).ldelim()`;
+            writeSnippet = (place) => ts_poet_1.code `${type}.encode(${utils.toProtoObjectId}(${place}), writer.uint32(${tag}).fork()).ldelim()`;
         }
         else if (types_1.isTimestamp(field) && (options.useDate === options_1.DateOption.DATE || options.useDate === options_1.DateOption.STRING)) {
             const tag = ((field.number << 3) | 2) >>> 0;
@@ -891,7 +888,7 @@ function generateFromJson(ctx, fullName, messageDesc) {
                     return ts_poet_1.code `${cstr}(${from})`;
                 }
             }
-            else if (types_1.isObjectId(field) && options.useObjectId) {
+            else if (types_1.isObjectId(field) && options.useMongoObjectId) {
                 return ts_poet_1.code `${utils.fromJsonObjectId}(${from})`;
             }
             else if (types_1.isTimestamp(field) && options.useDate === options_1.DateOption.STRING) {
@@ -943,7 +940,7 @@ function generateFromJson(ctx, fullName, messageDesc) {
                             return ts_poet_1.code `${cstr}(${from})`;
                         }
                     }
-                    else if (types_1.isObjectId(valueType) && options.useObjectId) {
+                    else if (types_1.isObjectId(valueType) && options.useMongoObjectId) {
                         return ts_poet_1.code `${utils.fromJsonObjectId}(${from})`;
                     }
                     else if (types_1.isTimestamp(valueType) && options.useDate === options_1.DateOption.STRING) {
@@ -1067,7 +1064,7 @@ function generateToJson(ctx, fullName, messageDesc) {
                     ? ts_poet_1.code `${from} !== undefined ? ${toJson}(${from}) : undefined`
                     : ts_poet_1.code `${toJson}(${from})`;
             }
-            else if (types_1.isObjectId(field) && options.useObjectId) {
+            else if (types_1.isObjectId(field) && options.useMongoObjectId) {
                 return ts_poet_1.code `${from}.toString()`;
             }
             else if (types_1.isTimestamp(field) && options.useDate === options_1.DateOption.DATE) {
@@ -1089,7 +1086,7 @@ function generateToJson(ctx, fullName, messageDesc) {
                 else if (types_1.isBytes(valueType)) {
                     return ts_poet_1.code `${utils.base64FromBytes}(${from})`;
                 }
-                else if (types_1.isObjectId(valueType) && options.useObjectId) {
+                else if (types_1.isObjectId(valueType) && options.useMongoObjectId) {
                     return ts_poet_1.code `${from}.toString()`;
                 }
                 else if (types_1.isTimestamp(valueType) && options.useDate === options_1.DateOption.DATE) {
@@ -1203,7 +1200,7 @@ function generateFromPartial(ctx, fullName, messageDesc) {
             if ((types_1.isLong(field) || types_1.isLongValueType(field)) && options.forceLong === options_1.LongOption.LONG) {
                 return ts_poet_1.code `Long.fromValue(${from})`;
             }
-            else if (types_1.isObjectId(field) && options.useObjectId) {
+            else if (types_1.isObjectId(field) && options.useMongoObjectId) {
                 return ts_poet_1.code `${from} as mongodb.ObjectId`;
             }
             else if (types_1.isPrimitive(field) ||
@@ -1232,7 +1229,7 @@ function generateFromPartial(ctx, fullName, messageDesc) {
                     else if (types_1.isAnyValueType(valueType)) {
                         return ts_poet_1.code `${from}`;
                     }
-                    else if (types_1.isObjectId(valueType) && options.useObjectId) {
+                    else if (types_1.isObjectId(valueType) && options.useMongoObjectId) {
                         return ts_poet_1.code `${from} as mongodb.ObjectId`;
                     }
                     else if (types_1.isTimestamp(valueType) &&

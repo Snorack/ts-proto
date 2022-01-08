@@ -38,7 +38,7 @@ function defaultOptions() {
         forceLong: LongOption.NUMBER,
         useOptionals: 'none',
         useDate: DateOption.DATE,
-        useObjectId: false,
+        useMongoObjectId: false,
         oneof: OneofOption.PROPERTIES,
         esModuleInterop: false,
         fileSuffix: '',

@@ -379,8 +379,8 @@ function isMapType(ctx, messageDesc, field) {
 }
 exports.isMapType = isMapType;
 function isObjectId(field) {
-    // need to use the includes instead of === because objectid could be imported from an external proto file
-    return field.typeName.includes('.ObjectId');
+    // need to use endsWith instead of === because objectid could be imported from an external proto file
+    return field.typeName.endsWith('.ObjectId');
 }
 exports.isObjectId = isObjectId;
 function isTimestamp(field) {
@@ -515,8 +515,8 @@ function messageToTypeName(ctx, protoType, typeOptions = {}) {
             return ts_poet_1.code `string`;
         }
     }
-    // need to use the includes instead of === because objectid could be imported from an external proto file
-    if (!typeOptions.keepValueType && options.useObjectId && protoType.includes('.ObjectId')) {
+    // need to use endsWith instead of === because objectid could be imported from an external proto file
+    if (!typeOptions.keepValueType && options.useMongoObjectId && protoType.endsWith('.ObjectId')) {
         return ts_poet_1.code `mongodb.ObjectId`;
     }
     const [module, type] = toModuleAndType(typeMap, protoType);
